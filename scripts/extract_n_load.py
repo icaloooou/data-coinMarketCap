@@ -2,17 +2,31 @@
 
 import requests
 import json
-import os
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy 
-from config import BaseConfig
+import sqlite3
 
-app = '__main__'
-app.config.from_object(BaseConfig)
-db = SQLAlchemy(app)
-db.create_all()
+conn = sqlite3.connect('testes.db')
+cursor = conn.cursor()
 
-from models import *
+cursor.execute("""
+CREATE TABLE history (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        price DOUBLE NOT NULL,
+        time VARCHAR(11) NOT NULL,
+        date VARCHAR(11) NOT NULL
+);
+CREATE TABLE candles (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        high DOUBLE NOT NULL,
+        low DOUBLE NOT NULL,
+        open DOUBLE NOT NULL,
+        volume DOUBLE NOT NULL,
+        marketCap DOUBLE NOT NULL,
+        years INTEGER NOT NULL,
+        month INTEGER NOT NULL,
+        day INTEGER NOT NULL
+)
+""")
 
 
 # FUNCTIONS
@@ -43,15 +57,15 @@ for i in data_history['data']:
     priceUsd = i['priceUsd']
     time = i['time']
     date = i['date']
-    history = History(priceUsd, time, date)
-    db.session.add(history)
-    db.session.commit()
-    db.session.flush()
+    cursor.execute("""
+        INSERT INTO history (price, time, date)
+        VALUES (?, ?, ?)
+        """, (priceUsd, time, date))
 
 for i in data_candles['data']['quotes']:
     high = i.get('quote', '').get('high')
     low = i.get('quote', '').get('low')
-    open = i.get('quote', '').get('open')
+    open_ = i.get('quote', '').get('open')
     close = i.get('quote', '').get('close')
     volume = i.get('quote', '').get('volume')
     marketCap = i.get('quote', '').get('marketCap')
@@ -63,11 +77,9 @@ for i in data_candles['data']['quotes']:
     month = str(dt_object.month).zfill(2) if len(str(dt_object.month)) == 1 else dt_object.month
     day = str(dt_object.day).zfill(2) if len(str(dt_object.day)) == 1 else dt_object.day
 
-    candles = Candles(high, low, open, close, volume, marketCap, year, month, day)
-    db.session.add(candles)
-    db.session.commit()
-    db.session.flush()
+    cursor.execute("""
+        INSERT INTO candles (high, low, open, close, volume, marketCap, year, month, day)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (high, low, open_, close, volume, marketCap, year, month, day))
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5050))
-    app.run(host='0.0.0.0', port=port)
+conn.close()
