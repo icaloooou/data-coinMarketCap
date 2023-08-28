@@ -14,19 +14,20 @@ CREATE TABLE history (
         price DOUBLE NOT NULL,
         time VARCHAR(11) NOT NULL,
         date VARCHAR(11) NOT NULL
-);
+);""")
+cursor.execute("""
 CREATE TABLE candles (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         high DOUBLE NOT NULL,
         low DOUBLE NOT NULL,
         open DOUBLE NOT NULL,
+        close DOUBLE NOT NULL,
         volume DOUBLE NOT NULL,
         marketCap DOUBLE NOT NULL,
-        years INTEGER NOT NULL,
+        year INTEGER NOT NULL,
         month INTEGER NOT NULL,
         day INTEGER NOT NULL
-)
-""")
+);""")
 
 
 # FUNCTIONS
@@ -81,5 +82,17 @@ for i in data_candles['data']['quotes']:
         INSERT INTO candles (high, low, open, close, volume, marketCap, year, month, day)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (high, low, open_, close, volume, marketCap, year, month, day))
+    
+#cursor.execute("""
+#SELECT * FROM history;
+#""")
+#for linha in cursor.fetchall():
+#    print('history', linha)
+
+#cursor.execute("""
+#SELECT * FROM candles;
+#""")
+#for linha in cursor.fetchall():
+#    print('candles', linha)
 
 conn.close()
