@@ -2,7 +2,17 @@
 
 import requests
 import json
+import os
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy 
+from config import BaseConfig
+
+app = '__main__'
+app.config.from_object(BaseConfig)
+db = SQLAlchemy(app)
+db.create_all()
+
+from models import *
 
 
 # FUNCTIONS
@@ -28,11 +38,15 @@ url_candles = ('https://api.coinmarketcap.com/data-api/v3.1/cryptocurrency/histo
         'interval=1d')
 data_candles = request(url_candles)
 
-# MANIPULATION
+# MANIPULATION AND WRITE DATA
 for i in data_history['data']:
     priceUsd = i['priceUsd']
     time = i['time']
     date = i['date']
+    history = History(priceUsd, time, date)
+    db.session.add(history)
+    db.session.commit()
+    db.session.flush()
 
 for i in data_candles['data']['quotes']:
     high = i.get('quote', '').get('high')
@@ -49,4 +63,11 @@ for i in data_candles['data']['quotes']:
     month = str(dt_object.month).zfill(2) if len(str(dt_object.month)) == 1 else dt_object.month
     day = str(dt_object.day).zfill(2) if len(str(dt_object.day)) == 1 else dt_object.day
 
-# WRITE DATA
+    candles = Candles(high, low, open, close, volume, marketCap, year, month, day)
+    db.session.add(candles)
+    db.session.commit()
+    db.session.flush()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5050))
+    app.run(host='0.0.0.0', port=port)
